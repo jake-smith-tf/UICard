@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 @IBDesignable
-class UICard: UIView {
+class UICard: UIView,UIDynamicAnimatorDelegate {
     
     var animator:UIDynamicAnimator!
     var pan:UIPanGestureRecognizer!
@@ -38,8 +38,17 @@ class UICard: UIView {
         
     }
     
+    func dynamicAnimatorDidPause(_ animator: UIDynamicAnimator) {
+
+    }
+    
+    func dynamicAnimatorWillResume(_ animator: UIDynamicAnimator) {
+        
+    }
+    
     override func awakeFromNib() {
         animator = UIDynamicAnimator(referenceView: self.superview!)
+        animator.delegate = self
         initialCenter = self.center
         pan = UIPanGestureRecognizer(target: self, action: #selector(self.panning))
         self.addGestureRecognizer(pan)
@@ -53,27 +62,25 @@ class UICard: UIView {
         
         if panGesture.state == UIGestureRecognizerState.began {
             animator.removeAllBehaviors()
+            
             let offset = UIOffsetMake(panLocationInCard.x - self.bounds.midX, panLocationInCard.y - self.bounds.midY);
             attachment = UIAttachmentBehavior(item: self, offsetFromCenter: offset, attachedToAnchor: panLocationInView)
             animator.addBehavior(attachment)
         }
         
         if panGesture.state == UIGestureRecognizerState.ended {
-           //animator.addBehavior(snap)
-            animator.removeAllBehaviors()
-            let snapBehavior = UISnapBehavior(item: self, snapTo: initialCenter)
-            animator.addBehavior(snapBehavior)
-            
+            UIView.animate(withDuration: 1, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 0.0, options: [], animations: {
+                self.animator.removeAllBehaviors()
+                self.transform = CGAffineTransform.init(rotationAngle: 0)
+                self.layoutIfNeeded()
+            }, completion: nil)
         }
         
         if panGesture.state == UIGestureRecognizerState.changed {
             attachment.anchorPoint = panLocationInView
-        } else {
-            // or something when its not moving
         }
     }
 
-    
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         UIView.transition(with: self, duration: 1, options: [.transitionFlipFromLeft], animations: {
             if let label = self.viewWithTag(1) as? UILabel
@@ -89,7 +96,6 @@ class UICard: UIView {
                 }
             }
         }, completion: nil)
-
     }
     
     required init?(coder aDecoder: NSCoder) {
